@@ -1,6 +1,6 @@
 language: go
 go:
-  - 1.11.5
+  - 1.11.x
   - tip
 
 os:
@@ -13,7 +13,6 @@ install:
   - go get -v ./...
 
 script:
-  - go vet
   - go test -v -coverprofile=coverage.txt -covermode=count
 
 after_success:
