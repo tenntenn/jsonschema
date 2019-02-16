@@ -8,21 +8,13 @@ import (
 	"net/http"
 )
 
-func ToWriter(w io.Writer) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
-		if _, err := io.Copy(w, r.Body); err != nil {
-			status := http.StatusInternalServerError
-			http.Error(rw, err.Error(), status)
-		}
-		fmt.Fprintln(w)
-	})
-}
-
+// New creates a new http.Handler which provides editor of schema.
+// action is a handler to receive JSONs which are edited by the editor.
 func New(action http.Handler, schema io.Reader) (http.Handler, error) {
 	return WithTemplate(action, schema, Template)
 }
 
+// WithTemplate creates a new http.Handler which provides editor of schema with given template.
 func WithTemplate(action http.Handler, schema io.Reader, tmpl *template.Template) (http.Handler, error) {
 	b, err := ioutil.ReadAll(schema)
 	if err != nil {
@@ -44,4 +36,16 @@ func WithTemplate(action http.Handler, schema io.Reader, tmpl *template.Template
 			}
 		}
 	}), nil
+}
+
+// ToWriter copies request body to the writer w with a new line.
+func ToWriter(w io.Writer) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		if _, err := io.Copy(w, r.Body); err != nil {
+			status := http.StatusInternalServerError
+			http.Error(rw, err.Error(), status)
+		}
+		fmt.Fprintln(w)
+	})
 }
