@@ -7,8 +7,9 @@ import (
 	"reflect"
 )
 
-// Channel, complex, and function values cannot be encoded in JSON.
-// Attempting to encode such a value causes Marshal to return
+// Generate generates JSON Schema from a Go type.
+// Channel, complex, and function values cannot be encoded in JSON Schema.
+// Attempting to generate such a type causes Generate to return
 // an UnsupportedTypeError.
 func Generate(w io.Writer, v interface{}, opts ...Option) error {
 	var g gen
