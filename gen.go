@@ -118,6 +118,7 @@ func (g *gen) structGen(parent Object, t reflect.Type, options ...Option) error 
 	}
 
 	parent.Set("type", "object")
+	parent.Set("title", t.Name())
 	parent.Set("required", required)
 	parent.Set("properties", properties)
 
