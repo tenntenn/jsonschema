@@ -15,11 +15,11 @@ var defaultTemplate = template.Must(template.New("template").Parse(`
 
 		<script>
 			(() => {
-				var schema = JSON.parse("{{.}}");
 				var element = document.getElementById('editor_holder');
 				var editor = new JSONEditor(element, {
-					schema: schema
+					schema: JSON.parse("{{.Schema}}")
 				});
+				{{if .JSON}}editor.setValue(JSON.parse("{{.JSON}}"));{{end}}
 				var btnSubmit = document.getElementById('btn-submit');
 				btnSubmit.addEventListener('click', () => { 
 					fetch(".", {

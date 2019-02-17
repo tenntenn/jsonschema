@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -16,13 +17,21 @@ func main() {
 		Age  int    `json:"age"`
 	}
 
-	var v Person
+	p := Person{
+		Name: "tenntenn",
+		Age:  33,
+	}
 	var buf bytes.Buffer
-	if err := jsonschema.Generate(&buf, v); err != nil {
+	if err := jsonschema.Generate(&buf, p); err != nil {
 		log.Fatal(err)
 	}
 
-	h, err := handler.New(&buf)
+	var val bytes.Buffer
+	if err := json.NewEncoder(&val).Encode(p); err != nil {
+		log.Fatal(err)
+	}
+
+	h, err := handler.New(&buf, handler.WithJSON(&val))
 	if err != nil {
 		log.Fatal(err)
 	}
