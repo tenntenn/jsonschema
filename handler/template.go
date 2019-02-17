@@ -2,7 +2,7 @@ package handler
 
 import "html/template"
 
-var Template = template.Must(template.New("template").Parse(`
+var defaultTemplate = template.Must(template.New("template").Parse(`
 <html>
 	<head>
 	<script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
