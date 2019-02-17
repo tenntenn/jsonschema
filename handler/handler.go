@@ -8,21 +8,51 @@ import (
 	"net/http"
 )
 
-// New creates a new http.Handler which provides editor of schema.
-func New(schema io.Reader) (http.Handler, error) {
-	return WithTemplate(schema, defaultTemplate)
+type Options struct {
+	JSON     string
+	Template *template.Template
 }
 
-// WithTemplate creates a new http.Handler which provides editor of schema with given template.
-func WithTemplate(schema io.Reader, tmpl *template.Template) (http.Handler, error) {
+type Option func(o *Options) error
+
+func WithJSON(r io.Reader) Option {
+	return func(o *Options) error {
+		b, err := ioutil.ReadAll(r)
+		if err != nil {
+			return err
+		}
+		o.JSON = string(b)
+		return nil
+	}
+}
+
+// New creates a new http.Handler which provides editor of schema.
+func New(schema io.Reader, options ...Option) (http.Handler, error) {
+	var data struct {
+		Schema string
+		JSON   string
+	}
 	b, err := ioutil.ReadAll(schema)
 	if err != nil {
 		return nil, err
 	}
-	schemaStr := string(b)
+	data.Schema = string(b)
+
+	var opts Options
+	for _, o := range options {
+		if err := o(&opts); err != nil {
+			return nil, err
+		}
+	}
+	data.JSON = opts.JSON
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := tmpl.Execute(w, schemaStr); err != nil {
+		tmpl := opts.Template
+		if tmpl == nil {
+			tmpl = defaultTemplate
+		}
+
+		if err := tmpl.Execute(w, data); err != nil {
 			status := http.StatusInternalServerError
 			http.Error(w, err.Error(), status)
 		}
