@@ -49,7 +49,7 @@ func New(schema io.Reader, options ...Option) (http.Handler, error) {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tmpl := opts.Template
 		if tmpl == nil {
-			tmpl = defaultTemplate
+			tmpl = Template
 		}
 
 		if err := tmpl.Execute(w, data); err != nil {
