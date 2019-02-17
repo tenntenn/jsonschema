@@ -22,10 +22,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	h, err := handler.New(handler.ToWriter(os.Stdout), &buf)
+	h, err := handler.New(&buf)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	h = handler.PostToWriter(os.Stdout, h)
 	log.Fatal(http.ListenAndServe(":8080", h))
 }
