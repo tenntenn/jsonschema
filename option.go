@@ -28,23 +28,50 @@ func (o *obj) Ref() string {
 }
 
 // Option is options for JSON Schema.
-type Option func(o Object) error
+type Option func(o Object) (Object, error)
 
 // ByReference explicits refrence of adding option.
 // It only supports refs which begins "#/".
 func ByReference(pattern string, opt Option) Option {
-	return func(o Object) error {
+	return func(o Object) (Object, error) {
 		if wildcard.MatchSimple(pattern, o.Ref()) {
 			return opt(o)
 		}
-		return nil
+		return o, nil
 	}
 }
 
 // PropertyOrder is add propertyOrder to schema.
 func PropertyOrder(order int) Option {
-	return func(o Object) error {
+	return func(o Object) (Object, error) {
 		o.Set("propertyOrder", order)
-		return nil
+		return o, nil
+	}
+}
+
+type refWrapper struct {
+	obj Object
+	ref string
+}
+
+func (o *refWrapper) Set(key string, value interface{}) {
+	o.obj.Set(key, value)
+}
+
+func (o *refWrapper) Get(key string) (interface{}, bool) {
+	return o.obj.Get(key)
+}
+
+func (o *refWrapper) Ref() string {
+	return o.ref
+}
+
+// Ref replaces to given ref.
+func Ref(ref string) Option {
+	return func(o Object) (Object, error) {
+		return &refWrapper{
+			obj: o,
+			ref: ref,
+		}, nil
 	}
 }

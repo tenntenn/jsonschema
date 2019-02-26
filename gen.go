@@ -7,15 +7,30 @@ import (
 	"reflect"
 )
 
+const (
+	// RefRoot is root of JSON Schema reference.
+	RefRoot = "#/"
+)
+
+// Generator generates a JSON Schema.
+type Generator interface {
+	JSONSchema(w io.Writer, opts ...Option) error
+}
+
 // Generate generates JSON Schema from a Go type.
 // Channel, complex, and function values cannot be encoded in JSON Schema.
 // Attempting to generate such a type causes Generate to return
 // an UnsupportedTypeError.
 func Generate(w io.Writer, v interface{}, opts ...Option) error {
+
+	if g, ok := v.(Generator); ok {
+		return g.JSONSchema(w, opts...)
+	}
+
 	var g gen
 	o := &obj{
 		m:   map[string]interface{}{},
-		ref: "#/",
+		ref: RefRoot,
 	}
 
 	if err := g.do(o, reflect.TypeOf(v), opts...); err != nil {
@@ -59,7 +74,9 @@ func (g *gen) do(o Object, t reflect.Type, options ...Option) error {
 	}
 
 	for _, opt := range options {
-		if err := opt(o); err != nil {
+		var err error
+		o, err = opt(o)
+		if err != nil {
 			return err
 		}
 	}
