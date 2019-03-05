@@ -1,6 +1,7 @@
 package jsonschema
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"path"
@@ -33,7 +34,7 @@ func Generate(w io.Writer, v interface{}, opts ...Option) error {
 		ref: RefRoot,
 	}
 
-	if err := g.do(o, reflect.TypeOf(v), opts...); err != nil {
+	if err := g.do(o, reflect.ValueOf(v), opts...); err != nil {
 		return err
 	}
 	return json.NewEncoder(w).Encode(o.m)
@@ -41,15 +42,33 @@ func Generate(w io.Writer, v interface{}, opts ...Option) error {
 
 type gen struct{}
 
-func (g *gen) do(o Object, t reflect.Type, options ...Option) error {
+func (g *gen) do(o Object, v reflect.Value, options ...Option) error {
 
-	switch t.Kind() {
+	if g1, ok := v.Interface().(Generator); ok {
+		var buf bytes.Buffer
+		if err := g1.JSONSchema(&buf, options...); err != nil {
+			return err
+		}
+
+		var m map[string]interface{}
+		if err := json.NewDecoder(&buf).Decode(&m); err != nil {
+			return err
+		}
+
+		for k, v := range m {
+			o.Set(k, v)
+		}
+
+		return nil
+	}
+
+	switch v.Kind() {
 	// unsupported types
 	case reflect.Complex64, reflect.Complex128, reflect.Interface,
 		reflect.Chan, reflect.Func, reflect.Invalid, reflect.UnsafePointer:
-		return &json.UnsupportedTypeError{t}
+		return &json.UnsupportedTypeError{v.Type()}
 	case reflect.Ptr:
-		return g.do(o, t.Elem(), options...)
+		return g.do(o, v.Elem(), options...)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 		reflect.Uintptr, reflect.Float32, reflect.Float64:
@@ -59,16 +78,16 @@ func (g *gen) do(o Object, t reflect.Type, options ...Option) error {
 	case reflect.String:
 		o.Set("type", "string")
 	case reflect.Map:
-		if t.Key().Kind() != reflect.String {
-			return &json.UnsupportedTypeError{t}
+		if v.Type().Key().Kind() != reflect.String {
+			return &json.UnsupportedTypeError{v.Type()}
 		}
 		o.Set("type", "object")
 	case reflect.Array, reflect.Slice:
-		if err := g.arrayGen(o, t.Elem(), options...); err != nil {
+		if err := g.arrayGen(o, v, options...); err != nil {
 			return err
 		}
 	case reflect.Struct:
-		if err := g.structGen(o, t, options...); err != nil {
+		if err := g.structGen(o, v, options...); err != nil {
 			return err
 		}
 	}
@@ -84,13 +103,17 @@ func (g *gen) do(o Object, t reflect.Type, options ...Option) error {
 	return nil
 }
 
-func (g *gen) arrayGen(parent Object, t reflect.Type, options ...Option) error {
+func (g *gen) arrayGen(parent Object, v reflect.Value, options ...Option) error {
 	o := &obj{
 		m:   map[string]interface{}{},
 		ref: path.Join(parent.Ref(), "items"),
 	}
 
-	if err := g.do(o, t, options...); err != nil {
+	elm := reflect.Zero(v.Type().Elem())
+	if v.Len() != 0 {
+		elm = v.Index(0)
+	}
+	if err := g.do(o, elm, options...); err != nil {
 		return err
 	}
 
@@ -100,20 +123,20 @@ func (g *gen) arrayGen(parent Object, t reflect.Type, options ...Option) error {
 	return nil
 }
 
-func (g *gen) structGen(parent Object, t reflect.Type, options ...Option) error {
-	required := make([]string, t.NumField())
-	properties := make(map[string]interface{}, t.NumField())
+func (g *gen) structGen(parent Object, v reflect.Value, options ...Option) error {
+	required := make([]string, v.NumField())
+	properties := make(map[string]interface{}, v.NumField())
 
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
-		name := f.Name
+	for i := 0; i < v.NumField(); i++ {
+		f, ft := v.Field(i), v.Type().Field(i)
+		name := ft.Name
 
-		if f.Anonymous {
-			name = f.Type.Name()
+		if ft.Anonymous {
+			name = ft.Type.Name()
 		}
 
-		if v, ok := f.Tag.Lookup("json"); ok {
-			name = v
+		if tag, ok := ft.Tag.Lookup("json"); ok {
+			name = tag
 		}
 
 		required[i] = name
@@ -127,7 +150,7 @@ func (g *gen) structGen(parent Object, t reflect.Type, options ...Option) error 
 		copy(opts, options)
 		opts[len(opts)-1] = ByReference(o.Ref(), PropertyOrder(i))
 
-		if err := g.do(o, f.Type, opts...); err != nil {
+		if err := g.do(o, f, opts...); err != nil {
 			return err
 		}
 
@@ -135,7 +158,9 @@ func (g *gen) structGen(parent Object, t reflect.Type, options ...Option) error 
 	}
 
 	parent.Set("type", "object")
-	parent.Set("title", t.Name())
+	if title := v.Type().Name(); title != "" {
+		parent.Set("title", title)
+	}
 	parent.Set("required", required)
 	parent.Set("properties", properties)
 
