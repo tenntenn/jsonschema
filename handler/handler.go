@@ -15,6 +15,13 @@ type Options struct {
 
 type Option func(o *Options) error
 
+func WithTemplate(tmpl *template.Template) Option {
+	return func(o *Options) error {
+		o.Template = tmpl
+		return nil
+	}
+}
+
 func WithJSON(r io.Reader) Option {
 	return func(o *Options) error {
 		b, err := ioutil.ReadAll(r)
