@@ -44,7 +44,16 @@ type gen struct{}
 
 func (g *gen) do(o Object, v reflect.Value, options ...Option) error {
 
+	switch v.Kind() {
+	case reflect.Interface, reflect.Chan, reflect.Func,
+		reflect.Ptr, reflect.Map, reflect.Slice:
+		if v.IsNil() {
+			return nil
+		}
+	}
+
 	if g1, ok := v.Interface().(Generator); ok {
+
 		var buf bytes.Buffer
 		if err := g1.JSONSchema(&buf, options...); err != nil {
 			return err
