@@ -2,6 +2,7 @@ module github.com/tenntenn/jsonschema
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/josephburnett/jd v0.0.0-20190531151850-1f9071c800e7
 	github.com/minio/minio v0.0.0-20190216002119-b6c00405ec5c
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/testify v1.2.2 // indirect

@@ -92,6 +92,27 @@ func TestGenerate(t *testing.T) {
 			expect: `{"type":"string"}`,
 		},
 		{
+			name: "int array",
+			v:    []int{10, 20, 30},
+			expect: `{
+				"type":"array",
+				"items": {"type": "number"}
+			}`,
+		},
+		{
+			name: "empty array",
+			v:    []int{},
+			expect: `{
+				"type":"array",
+				"items": {"type": "number"}
+			}`,
+		},
+		{
+			name:   "nil array",
+			v:      []int(nil),
+			expect: `{}`,
+		},
+		{
 			name: "struct",
 			v:    T{N: 100, S: ""},
 			expect: `{
