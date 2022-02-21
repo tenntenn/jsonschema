@@ -1,12 +1,9 @@
 module github.com/tenntenn/jsonschema
 
+go 1.16
+
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/josephburnett/jd v0.0.0-20190531151850-1f9071c800e7
-	github.com/minio/minio v0.0.0-20190216002119-b6c00405ec5c
-	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/stretchr/testify v1.2.2 // indirect
-	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
-	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
-	github.com/xeipuuv/gojsonschema v1.1.0
+	github.com/josephburnett/jd v1.5.1
+	github.com/minio/pkg v1.1.15
+	github.com/xeipuuv/gojsonschema v1.2.0
 )
