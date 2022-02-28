@@ -1,6 +1,6 @@
 package jsonschema
 
-import "github.com/minio/minio/pkg/wildcard"
+import "github.com/minio/pkg/wildcard"
 
 // Object is interface of JSON object.
 type Object interface {
